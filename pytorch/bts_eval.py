@@ -28,6 +28,7 @@ import torch.nn as nn
 import torch.nn.utils as utils
 import torchvision.utils as vutils
 import torch.backends.cudnn as cudnn
+import pandas as pd
 from torch.autograd import Variable
 from tensorboardX import SummaryWriter
 from bts_dataloader import *
@@ -243,7 +244,8 @@ def eval(pred_depths, step):
         pred_depths_valid.append(pred_depths[t_id])
     
     num_samples = num_samples - len(missing_ids)
-    
+    csv_header=['filename','silog', 'abs_rel', 'log10', 'rms', 'sq_rel', 'log_rms', 'd1', 'd2', 'd3']
+    csv_info=[]
     silog = np.zeros(num_samples, np.float32)
     log10 = np.zeros(num_samples, np.float32)
     rms = np.zeros(num_samples, np.float32)
@@ -290,13 +292,15 @@ def eval(pred_depths, step):
         
         silog[i], log10[i], abs_rel[i], sq_rel[i], rms[i], log_rms[i], d1[i], d2[i], d3[i] = compute_errors(
             gt_depth[valid_mask], pred_depth[valid_mask])
-    
+        csv_info.append([num_samples[i],silog[i], log10[i], abs_rel[i], sq_rel[i], rms[i], log_rms[i], d1[i], d2[i], d3[i]])
+
     print("{:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}".format('silog', 'abs_rel', 'log10', 'rms',
                                                                                  'sq_rel', 'log_rms', 'd1', 'd2', 'd3'))
     print("{:7.4f}, {:7.4f}, {:7.3f}, {:7.3f}, {:7.3f}, {:7.3f}, {:7.3f}, {:7.3f}, {:7.3f}".format(
         silog.mean(), abs_rel.mean(), log10.mean(), rms.mean(), sq_rel.mean(), log_rms.mean(), d1.mean(), d2.mean(),
         d3.mean()))
-    
+    df = pd.DataFrame(data=csv_info, columns =csv_header)
+    df.to_csv("save_loss.csv",header=True, index=False,encoding='utf-8')
     return silog, log10, abs_rel, sq_rel, rms, log_rms, d1, d2, d3
 
 

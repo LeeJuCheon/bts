@@ -21,7 +21,7 @@ import argparse
 import fnmatch
 import cv2
 import numpy as np
-
+import pandas as pd
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
 
@@ -110,8 +110,9 @@ def test():
         for t_id in range(num_test_samples):
             file_dir = pred_filenames[t_id].split('.')[0]
             filename = file_dir.split('_')[-1]
-            directory = file_dir.replace('_' + filename, '')
-            gt_depth_path = os.path.join(args.gt_path, directory, 'proj_depth/groundtruth/image_02', filename + '.png')
+            # directory = file_dir.replace('_' + filename, '')
+    
+            gt_depth_path = os.path.join(args.gt_path, '2011_09_26_drive_0005_sync/image_02', filename + '.png')
             depth = cv2.imread(gt_depth_path, -1)
             if depth is None:
                 print('Missing: %s ' % gt_depth_path)
@@ -126,7 +127,7 @@ def test():
             file_dir = pred_filenames[t_id].split('.')[0]
             filename = file_dir.split('_')[-1]
             directory = file_dir.replace('_rgb_'+file_dir.split('_')[-1], '')
-            gt_depth_path = os.path.join(args.gt_path, directory, 'sync_depth_' + filename + '.png')
+            gt_depth_path = os.path.join(args.gt_path, directory +'/sync_depth_' + filename + '.png')
             depth = cv2.imread(gt_depth_path, -1)
             if depth is None:
                 print('Missing: %s ' % gt_depth_path)
@@ -158,7 +159,8 @@ def eval(pred_depths):
         pred_depths_valid.append(pred_depths[t_id])
 
     num_samples = num_samples - len(missing_ids)
-
+    csv_header=['img_num','silog', 'abs_rel', 'log10', 'rms', 'sq_rel', 'log_rms', 'd1', 'd2', 'd3']
+    csv_info=[]
     silog = np.zeros(num_samples, np.float32)
     log10 = np.zeros(num_samples, np.float32)
     rms = np.zeros(num_samples, np.float32)
@@ -207,13 +209,17 @@ def eval(pred_depths):
             valid_mask = np.logical_and(valid_mask, eval_mask)
 
         silog[i], log10[i], abs_rel[i], sq_rel[i], rms[i], log_rms[i], d1[i], d2[i], d3[i] = compute_errors(gt_depth[valid_mask], pred_depth[valid_mask])
+        csv_info.append([i,silog[i], log10[i], abs_rel[i], sq_rel[i], rms[i], log_rms[i], d1[i], d2[i], d3[i]])
 
     print("{:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}".format(
         'd1', 'd2', 'd3', 'AbsRel', 'SqRel', 'RMSE', 'RMSElog', 'SILog', 'log10'))
     print("{:7.3f}, {:7.3f}, {:7.3f}, {:7.3f}, {:7.3f}, {:7.3f}, {:7.3f}, {:7.3f}, {:7.3f}".format(
         d1.mean(), d2.mean(), d3.mean(),
         abs_rel.mean(), sq_rel.mean(), rms.mean(), log_rms.mean(), silog.mean(), log10.mean()))
+    csv_info.append(["mean",silog.mean(), log10.mean(), abs_rel.mean(), sq_rel.mean(), rms.mean(), log_rms.mean(),d1.mean(), d2.mean(), d3.mean()])
 
+    df = pd.DataFrame(data=csv_info, columns =csv_header)
+    df.to_csv("save_loss.csv",header=True, index=False,encoding='utf-8')
     return silog, log10, abs_rel, sq_rel, rms, log_rms, d1, d2, d3
 
 

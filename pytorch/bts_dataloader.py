@@ -71,7 +71,7 @@ class BtsDataLoader(object):
         elif mode == 'test':
             self.testing_samples = DataLoadPreprocess(args, mode, transform=preprocessing_transforms(mode))
             self.data = DataLoader(self.testing_samples, 1, shuffle=False, num_workers=1)
-
+            
         else:
             print('mode should be one of \'train, test, online_eval\'. Got {}'.format(mode))
             
@@ -93,17 +93,18 @@ class DataLoadPreprocess(Dataset):
     
     def __getitem__(self, idx):
         sample_path = self.filenames[idx]
+        #print("sample_path:",sample_path)
         focal = float(sample_path.split()[2])
-
         if self.mode == 'train':
             if self.args.dataset == 'kitti' and self.args.use_right is True and random.random() > 0.5:
-                image_path = os.path.join(self.args.data_path, "./" + sample_path.split()[3])
-                depth_path = os.path.join(self.args.gt_path, "./" + sample_path.split()[4])
+                image_path = os.path.join(self.args.data_path, "train/" + sample_path.split()[3])
+                depth_path = os.path.join(self.args.gt_path, "train/" + sample_path.split()[4])
             else:
-                image_path = os.path.join(self.args.data_path, "./" + sample_path.split()[0])
-                depth_path = os.path.join(self.args.gt_path, "./" + sample_path.split()[1])
+                image_path = os.path.join(self.args.data_path + sample_path.split()[0])
+                depth_path = os.path.join(self.args.gt_path + sample_path.split()[1])
     
             image = Image.open(image_path)
+            
             depth_gt = Image.open(depth_path)
             
             if self.args.do_kb_crop is True:
@@ -142,13 +143,15 @@ class DataLoadPreprocess(Dataset):
                 data_path = self.args.data_path_eval
             else:
                 data_path = self.args.data_path
-
-            image_path = os.path.join(data_path, "./" + sample_path.split()[0])
+            #print(sample_path.split()[1])
+            # image_path = os.path.join(data_path, "val/" + sample_path.split()[0])
+            image_path = os.path.join(data_path,sample_path.split()[0])
             image = np.asarray(Image.open(image_path), dtype=np.float32) / 255.0
-
+            #print("Shape:",image.shape)
             if self.mode == 'online_eval':
                 gt_path = self.args.gt_path_eval
-                depth_path = os.path.join(gt_path, "./" + sample_path.split()[1])
+                # depth_path = os.path.join(gt_path, "val/" + sample_path.split()[1])
+                depth_path = os.path.join(gt_path, sample_path.split()[1])
                 has_valid_depth = False
                 try:
                     depth_gt = Image.open(depth_path)
@@ -171,6 +174,8 @@ class DataLoadPreprocess(Dataset):
                 top_margin = int(height - 352)
                 left_margin = int((width - 1216) / 2)
                 image = image[top_margin:top_margin + 352, left_margin:left_margin + 1216, :]
+
+                #image = image[top_margin:top_margin + 352, left_margin:left_margin + 1216]
                 if self.mode == 'online_eval' and has_valid_depth:
                     depth_gt = depth_gt[top_margin:top_margin + 352, left_margin:left_margin + 1216, :]
             
@@ -181,7 +186,7 @@ class DataLoadPreprocess(Dataset):
         
         if self.transform:
             sample = self.transform(sample)
-        
+
         return sample
     
     def rotate_image(self, image, angle, flag=Image.BILINEAR):

@@ -1,6 +1,9 @@
 # Created by https://www.gitignore.io/api/c++,python
 # Edit at https://www.gitignore.io/?templates=c++,python
 
+# csv
+*.csv
+
 # Notebook checkpoints
 .ipynb_checkpoints
 

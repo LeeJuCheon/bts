@@ -1,0 +1,6 @@
+--pred_path result_bts_eigen_v2_pytorch_densenet161/raw/ 
+--gt_path ../../dataset/kitti_dataset_mini/data_depth_annotated/val/depth/ 
+--dataset kitti 
+--min_depth_eval 1e-3
+--max_depth_eval 80
+--eigen_crop

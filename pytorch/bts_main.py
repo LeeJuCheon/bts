@@ -19,7 +19,6 @@ import argparse
 import datetime
 import sys
 import os
-
 import torch
 import torch.nn as nn
 import torch.nn.utils as utils
@@ -37,7 +36,9 @@ from tqdm import tqdm
 
 from bts import BtsModel
 from bts_dataloader import *
-
+import gc
+gc.collect()
+torch.cuda.empty_cache()
 
 def convert_arg_line_to_args(arg_line):
     for arg in arg_line.split():
@@ -94,7 +95,7 @@ parser.add_argument('--num_threads',               type=int,   help='number of t
 parser.add_argument('--world_size',                type=int,   help='number of nodes for distributed training', default=1)
 parser.add_argument('--rank',                      type=int,   help='node rank for distributed training', default=0)
 parser.add_argument('--dist_url',                  type=str,   help='url used to set up distributed training', default='tcp://127.0.0.1:1234')
-parser.add_argument('--dist_backend',              type=str,   help='distributed backend', default='nccl')
+parser.add_argument('--dist_backend',              type=str,   help='distributed backend', default='gloo')
 parser.add_argument('--gpu',                       type=int,   help='GPU id to use.', default=None)
 parser.add_argument('--multiprocessing_distributed',           help='Use multi-processing distributed training to launch '
                                                                     'N processes per node, which has N GPUs. This is the '
@@ -431,7 +432,8 @@ def main_worker(gpu, ngpus_per_node, args):
     steps_per_epoch = len(dataloader.data)
     num_total_steps = args.num_epochs * steps_per_epoch
     epoch = global_step // steps_per_epoch
-
+    print("epoch:",epoch)
+    print("num_epoch:",args.num_epochs)
     while epoch < args.num_epochs:
         if args.distributed:
             dataloader.train_sampler.set_epoch(epoch)

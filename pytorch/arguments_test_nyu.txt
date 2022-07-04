@@ -7,3 +7,4 @@
 --input_height 480
 --input_width 640
 --max_depth 10
+--save_lpg

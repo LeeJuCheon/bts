@@ -1,0 +1,31 @@
+--mode train
+--model_name bts_eigen_v2_pytorch_test
+--encoder densenet161_bts
+--dataset kitti
+--data_path ../../dataset/kitti_dataset_mini/data_depth_annotated/
+--gt_path ../../dataset/kitti_dataset_mini/data_depth_annotated/
+--filenames_file ../train_test_inputs/eigen_train_files_mini_with_gt.txt
+--batch_size 1
+--num_epochs 70
+--learning_rate 1e-4
+--weight_decay 1e-2
+--adam_eps 1e-3
+--num_threads 1
+--input_height 352
+--input_width 704
+--max_depth 80
+--checkpoint_path ./models/bts_eigen_v2_pytorch_densenet161/model
+--degree 1.0
+--log_directory ./models/
+--multiprocessing_distributed
+--dist_url tcp://127.0.0.1:2345
+
+--log_freq 100
+--eval_freq 5000
+--data_path_eval ../../dataset/kitti_dataset_mini/data_depth_annotated/
+--gt_path_eval ../../dataset/kitti_dataset_mini/data_depth_annotated/
+--filenames_file_eval ../train_test_inputs/eigen_test_files_mini_with_gt.txt
+--min_depth_eval 1e-3
+--max_depth_eval 80
+--eval_summary_directory ./models/eval/
+--garg_crop
