@@ -1,0 +1,11 @@
+--encoder densenet161_bts
+--data_path ../../dataset/nuscene_depth_tcl/CAM_FRONT/
+--dataset nuscenes
+--filenames_file ../train_test_inputs/nuscenes_train_files_with_gt.txt
+--model_name bts_nuscene_v2_pytorch_densenet161
+
+--checkpoint_path ./models/bts_nuscene_v2_pytorch_test/model-1000-best_log10_0.10218
+--do_kb_crop
+--input_height 896
+--input_width 1600
+--max_depth 80

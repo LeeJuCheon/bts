@@ -45,7 +45,7 @@ def convert_arg_line_to_args(arg_line):
 parser = argparse.ArgumentParser(description='BTS PyTorch implementation.', fromfile_prefix_chars='@')
 parser.convert_arg_line_to_args = convert_arg_line_to_args
 
-parser.add_argument('--model_name', type=str, help='model name', default='bts_nyu_v2')
+parser.add_argument('--model_name', type=str, help='model name', default='bts_nuscene_v2_pytorch_densenet161')
 parser.add_argument('--encoder', type=str, help='type of encoder, vgg or desenet121_bts or densenet161_bts',
                     default='densenet161_bts')
 parser.add_argument('--data_path', type=str, help='path to the data', required=True)
@@ -68,10 +68,10 @@ else:
 model_dir = os.path.dirname(args.checkpoint_path)
 sys.path.append(model_dir)
 
-for key, val in vars(__import__(args.model_name)).items():
-    if key.startswith('__') and key.endswith('__'):
-        continue
-    vars()[key] = val
+# for key, val in vars(__import__(args.model_name)).items():
+#     if key.startswith('__') and key.endswith('__'):
+#         continue
+#     vars()[key] = val
 
 
 def get_num_lines(file_path):
@@ -153,6 +153,12 @@ def test(params):
             filename_pred_png = save_name + '/raw/' + lines[s].split()[0].split('/')[-1].replace('.jpg', '.png')
             filename_cmap_png = save_name + '/cmap/' + lines[s].split()[0].split('/')[-1].replace('.jpg', '.png')
             filename_image_png = save_name + '/rgb/' + lines[s].split()[0].split('/')[-1]
+        elif args.dataset == 'nuscenes':
+            scene_name = lines[s].split()[0].split('/')[0]
+            filename_pred_png = save_name + '/raw/' + scene_name.replace('.jpg', '.png')
+            filename_cmap_png = save_name + '/cmap/' + scene_name.replace('.jpg', '.png')
+            filename_gt_png = save_name + '/gt/' + scene_name.replace('.jpg', '.png')
+            filename_image_png = save_name + '/rgb/' + scene_name
         else:
             scene_name = lines[s].split()[0].split('/')[0]
             filename_pred_png = save_name + '/raw/' + scene_name + '_' + lines[s].split()[0].split('/')[1].replace(
@@ -177,12 +183,13 @@ def test(params):
         pred_4x4 = pred_4x4s[s]
         pred_2x2 = pred_2x2s[s]
         pred_1x1 = pred_1x1s[s]
-        
+        print("pred_depth:",pred_depth)        
         if args.dataset == 'kitti' or args.dataset == 'kitti_benchmark':
             pred_depth_scaled = pred_depth * 256.0
         else:
             pred_depth_scaled = pred_depth * 1000.0
-        
+        print("pred_depth_scaled:",pred_depth_scaled)
+
         pred_depth_scaled = pred_depth_scaled.astype(np.uint16)
         cv2.imwrite(filename_pred_png, pred_depth_scaled, [cv2.IMWRITE_PNG_COMPRESSION, 0])
         

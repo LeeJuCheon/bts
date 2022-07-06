@@ -108,12 +108,20 @@ class DataLoadPreprocess(Dataset):
             depth_gt = Image.open(depth_path)
             
             if self.args.do_kb_crop is True:
-                height = image.height
-                width = image.width
-                top_margin = int(height - 352)
-                left_margin = int((width - 1216) / 2)
-                depth_gt = depth_gt.crop((left_margin, top_margin, left_margin + 1216, top_margin + 352))
-                image = image.crop((left_margin, top_margin, left_margin + 1216, top_margin + 352))
+                if self.args.dataset == 'kitti':
+                    height = image.height
+                    width = image.width
+                    top_margin = int(height - 352)
+                    left_margin = int((width - 1216) / 2)
+                    depth_gt = depth_gt.crop((left_margin, top_margin, left_margin + 1216, top_margin + 352))
+                    image = image.crop((left_margin, top_margin, left_margin + 1216, top_margin + 352))
+                elif self.args.dataset == 'nuscenes':
+                    height = image.height
+                    width = image.width
+                    top_margin = int(height - self.args.input_height)
+                    left_margin = int((width - self.args.input_width) / 2)
+                    depth_gt = depth_gt.crop((left_margin, top_margin, left_margin + self.args.input_width, top_margin + self.args.input_height))
+                    image = image.crop((left_margin, top_margin, left_margin + self.args.input_width, top_margin + self.args.input_height))
             
             # To avoid blank boundaries due to pixel registration
             if self.args.dataset == 'nyu':
@@ -143,15 +151,23 @@ class DataLoadPreprocess(Dataset):
                 data_path = self.args.data_path_eval
             else:
                 data_path = self.args.data_path
-            #print(sample_path.split()[1])
-            # image_path = os.path.join(data_path, "val/" + sample_path.split()[0])
-            image_path = os.path.join(data_path,sample_path.split()[0])
+            if self.args.dataset == 'nyu':
+                image_path = os.path.join(data_path, "val/" + sample_path.split()[0])
+            elif self.args.dataset == 'kitti' or self.args.dataset == 'nuscenes':
+                image_path = os.path.join(data_path,sample_path.split()[0])
+            else:
+                pass
+
             image = np.asarray(Image.open(image_path), dtype=np.float32) / 255.0
             #print("Shape:",image.shape)
             if self.mode == 'online_eval':
                 gt_path = self.args.gt_path_eval
-                # depth_path = os.path.join(gt_path, "val/" + sample_path.split()[1])
-                depth_path = os.path.join(gt_path, sample_path.split()[1])
+                if self.args.dataset == 'nyu':
+                    depth_path = os.path.join(gt_path, "val/" + sample_path.split()[1])
+                elif self.args.dataset == 'kitti' or self.args.dataset == 'nuscenes':
+                    depth_path = os.path.join(gt_path, sample_path.split()[1])
+                else:
+                    pass
                 has_valid_depth = False
                 try:
                     depth_gt = Image.open(depth_path)
@@ -169,16 +185,27 @@ class DataLoadPreprocess(Dataset):
                         depth_gt = depth_gt / 256.0
 
             if self.args.do_kb_crop is True:
-                height = image.shape[0]
-                width = image.shape[1]
-                top_margin = int(height - 352)
-                left_margin = int((width - 1216) / 2)
-                image = image[top_margin:top_margin + 352, left_margin:left_margin + 1216, :]
+                if self.args.dataset == 'kitti':
+                    height = image.shape[0]
+                    width = image.shape[1]
+                    top_margin = int(height - 352)
+                    left_margin = int((width - 1216) / 2)
+                    image = image[top_margin:top_margin + 352, left_margin:left_margin + 1216, :]
 
-                #image = image[top_margin:top_margin + 352, left_margin:left_margin + 1216]
-                if self.mode == 'online_eval' and has_valid_depth:
-                    depth_gt = depth_gt[top_margin:top_margin + 352, left_margin:left_margin + 1216, :]
-            
+                    #image = image[top_margin:top_margin + 352, left_margin:left_margin + 1216]
+                    if self.mode == 'online_eval' and has_valid_depth:
+                        depth_gt = depth_gt[top_margin:top_margin + 352, left_margin:left_margin + 1216, :]
+                elif self.args.dataset == 'nuscenes':
+                    height = image.shape[0]
+                    width = image.shape[1]
+                    top_margin = int(height - self.args.input_height)
+                    left_margin = int((width - self.args.input_width) / 2)
+                    image = image[top_margin:top_margin + self.args.input_height, left_margin:left_margin + self.args.input_width, :]
+
+                    #image = image[top_margin:top_margin + 352, left_margin:left_margin + 1216]
+                    if self.mode == 'online_eval' and has_valid_depth:
+                        depth_gt = depth_gt[top_margin:top_margin + self.args.input_height, left_margin:left_margin + self.args.input_width, :]
+
             if self.mode == 'online_eval':
                 sample = {'image': image, 'depth': depth_gt, 'focal': focal, 'has_valid_depth': has_valid_depth}
             else:

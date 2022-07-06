@@ -265,12 +265,13 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
             pred_depth = pred_depth.cpu().numpy().squeeze()
             gt_depth = gt_depth.cpu().numpy().squeeze()
 
+        # TODO fixed value 352(height) and 1216(width) -> change variables
         if args.do_kb_crop:
             height, width = gt_depth.shape
-            top_margin = int(height - 352)
-            left_margin = int((width - 1216) / 2)
+            top_margin = int(height - args.input_height)
+            left_margin = int((width - args.input_width) / 2)
             pred_depth_uncropped = np.zeros((height, width), dtype=np.float32)
-            pred_depth_uncropped[top_margin:top_margin + 352, left_margin:left_margin + 1216] = pred_depth
+            pred_depth_uncropped[top_margin:top_margin + args.input_height, left_margin:left_margin + args.input_width] = pred_depth
             pred_depth = pred_depth_uncropped
 
         pred_depth[pred_depth < args.min_depth_eval] = args.min_depth_eval
@@ -432,8 +433,6 @@ def main_worker(gpu, ngpus_per_node, args):
     steps_per_epoch = len(dataloader.data)
     num_total_steps = args.num_epochs * steps_per_epoch
     epoch = global_step // steps_per_epoch
-    print("epoch:",epoch)
-    print("num_epoch:",args.num_epochs)
     while epoch < args.num_epochs:
         if args.distributed:
             dataloader.train_sampler.set_epoch(epoch)
@@ -448,11 +447,12 @@ def main_worker(gpu, ngpus_per_node, args):
 
             lpg8x8, lpg4x4, lpg2x2, reduc1x1, depth_est = model(image, focal)
 
-            if args.dataset == 'nyu':
+            # 해당 부분의 의미 ? 
+            if args.dataset == 'nyu' or args.dataset =='nuscenes':
                 mask = depth_gt > 0.1
             else:
                 mask = depth_gt > 1.0
-
+            
             loss = silog_criterion.forward(depth_est, depth_gt, mask.to(torch.bool))
             loss.backward()
             for param_group in optimizer.param_groups:
@@ -564,6 +564,7 @@ def main():
     command = 'mkdir ' + args.log_directory + '/' + args.model_name
     os.system(command)
 
+    # FIXME : NEED ERROR FIX
     args_out_path = args.log_directory + '/' + args.model_name + '/' + sys.argv[1]
     command = 'cp ' + sys.argv[1] + ' ' + args_out_path
     os.system(command)
