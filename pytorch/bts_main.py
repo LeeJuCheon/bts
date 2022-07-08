@@ -266,6 +266,7 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
             gt_depth = gt_depth.cpu().numpy().squeeze()
 
         # TODO fixed value 352(height) and 1216(width) -> change variables
+
         if args.do_kb_crop:
             height, width = gt_depth.shape
             top_margin = int(height - args.input_height)
@@ -289,7 +290,7 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
                 eval_mask[int(0.40810811 * gt_height):int(0.99189189 * gt_height), int(0.03594771 * gt_width):int(0.96405229 * gt_width)] = 1
 
             elif args.eigen_crop:
-                if args.dataset == 'kitti':
+                if args.dataset == 'kitti' or args.dataset == 'nuscenes' :
                     eval_mask[int(0.3324324 * gt_height):int(0.91351351 * gt_height), int(0.0359477 * gt_width):int(0.96405229 * gt_width)] = 1
                 else:
                     eval_mask[45:471, 41:601] = 1
@@ -447,12 +448,33 @@ def main_worker(gpu, ngpus_per_node, args):
 
             lpg8x8, lpg4x4, lpg2x2, reduc1x1, depth_est = model(image, focal)
 
-            # 해당 부분의 의미 ? 
-            if args.dataset == 'nyu' or args.dataset =='nuscenes':
+            # 해당 부분의 의미 ?
+            # print(depth_gt.squeeze().shape)
+            # check_ha=0
+            # maxpix=-1
+            # minpix=100
+            # for i in depth_gt.squeeze():
+            #     for j in i:
+            #         if(j>0):
+            #             if(j>maxpix):
+            #                 maxpix=j
+            #             if(j<minpix):
+            #                 minpix=j
+            #             check_ha+=1
+            # print("count:",check_ha)
+            # print("maxpix:",maxpix)
+            # print("minpix:",minpix)
+            # sys.exit(0)
+
+            if args.dataset == 'nyu':
                 mask = depth_gt > 0.1
+
+            elif args.dataset == 'nuscenes':
+                mask = depth_gt > 0.01
             else:
                 mask = depth_gt > 1.0
             
+
             loss = silog_criterion.forward(depth_est, depth_gt, mask.to(torch.bool))
             loss.backward()
             for param_group in optimizer.param_groups:

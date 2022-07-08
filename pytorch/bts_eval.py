@@ -205,7 +205,7 @@ def test(params):
                     missing_ids.add(t_id)
                     continue
                 
-                if args.dataset == 'nyu':
+                if args.dataset == 'nyu' or args.dataset =='nuscenes':
                     depth = depth.astype(np.float32) / 1000.0
                 else:
                     depth = depth.astype(np.float32) / 256.0
@@ -262,10 +262,10 @@ def eval(pred_depths, step):
         
         if args.do_kb_crop:
             height, width = gt_depth.shape
-            top_margin = int(height - 352)
-            left_margin = int((width - 1216) / 2)
+            top_margin = int(height - args.input_height)
+            left_margin = int((width - args.input_width) / 2)
             pred_depth_uncropped = np.zeros((height, width), dtype=np.float32)
-            pred_depth_uncropped[top_margin:top_margin + 352, left_margin:left_margin + 1216] = pred_depth
+            pred_depth_uncropped[top_margin:top_margin + args.input_height, left_margin:left_margin + args.input_width] = pred_depth
             pred_depth = pred_depth_uncropped
         
         pred_depth[pred_depth < args.min_depth_eval] = args.min_depth_eval

@@ -183,30 +183,44 @@ def test(params):
         pred_4x4 = pred_4x4s[s]
         pred_2x2 = pred_2x2s[s]
         pred_1x1 = pred_1x1s[s]
-        print("pred_depth:",pred_depth)        
+        # print("pred_depth:",pred_depth)        
+        # print("pred_depth_max:", np.max(pred_depth))
+        # print("pred_depth_min:",np.min(pred_depth))
+        
+
         if args.dataset == 'kitti' or args.dataset == 'kitti_benchmark':
             pred_depth_scaled = pred_depth * 256.0
+        # elif args.dataset =='nuscenes':
+        #     pred_depth_scaled = pred_depth * 10000.0
         else:
             pred_depth_scaled = pred_depth * 1000.0
-        print("pred_depth_scaled:",pred_depth_scaled)
-
+        # print("pred_depth_scaled_max:",np.max(pred_depth_scaled))
+        # print("pred_depth_scaled_min:",np.min(pred_depth_scaled))
+        # print("pred_depth_scaled:",pred_depth_scaled)
+        # print("pred_8x8:",pred_8x8)
         pred_depth_scaled = pred_depth_scaled.astype(np.uint16)
         cv2.imwrite(filename_pred_png, pred_depth_scaled, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+        # plt.imsave(filename_pred_png, (255-np.log10(pred_depth)), cmap='Greys')
         
         if args.save_lpg:
             cv2.imwrite(filename_image_png, image[10:-1 - 9, 10:-1 - 9, :])
             if args.dataset == 'nyu':
                 plt.imsave(filename_gt_png, np.log10(gt[10:-1 - 9, 10:-1 - 9]), cmap='Greys')
                 pred_depth_cropped = pred_depth[10:-1 - 9, 10:-1 - 9]
+
                 plt.imsave(filename_cmap_png, np.log10(pred_depth_cropped), cmap='Greys')
                 pred_8x8_cropped = pred_8x8[10:-1 - 9, 10:-1 - 9]
+
                 filename_lpg_cmap_png = filename_cmap_png.replace('.png', '_8x8.png')
                 plt.imsave(filename_lpg_cmap_png, np.log10(pred_8x8_cropped), cmap='Greys')
+
                 pred_4x4_cropped = pred_4x4[10:-1 - 9, 10:-1 - 9]
                 filename_lpg_cmap_png = filename_cmap_png.replace('.png', '_4x4.png')
+
                 plt.imsave(filename_lpg_cmap_png, np.log10(pred_4x4_cropped), cmap='Greys')
                 pred_2x2_cropped = pred_2x2[10:-1 - 9, 10:-1 - 9]
                 filename_lpg_cmap_png = filename_cmap_png.replace('.png', '_2x2.png')
+
                 plt.imsave(filename_lpg_cmap_png, np.log10(pred_2x2_cropped), cmap='Greys')
                 pred_1x1_cropped = pred_1x1[10:-1 - 9, 10:-1 - 9]
                 filename_lpg_cmap_png = filename_cmap_png.replace('.png', '_1x1.png')

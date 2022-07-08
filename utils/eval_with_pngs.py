@@ -22,6 +22,7 @@ import fnmatch
 import cv2
 import numpy as np
 import pandas as pd
+import sys
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
 
@@ -96,8 +97,10 @@ def test():
             missing_ids.add(i)
             continue
 
-        if args.dataset == 'nyu':
+        if args.dataset == 'nyu' or args.dataset =='nuscenes':
             pred_depth = pred_depth.astype(np.float32) / 1000.0
+        # elif args.dataset == 'nuscenes':
+        #     pred_depth = pred_depth.astype(np.float32) / 10000.0
         else:
             pred_depth = pred_depth.astype(np.float32) / 256.0
 
@@ -118,7 +121,7 @@ def test():
                 print('Missing: %s ' % gt_depth_path)
                 missing_ids.add(t_id)
                 continue
-
+                    
             depth = depth.astype(np.float32) / 256.0
             gt_depths.append(depth)
 
@@ -137,6 +140,33 @@ def test():
             depth = depth.astype(np.float32) / 1000.0
             gt_depths.append(depth)
 
+    elif args.dataset == 'nuscenes':
+        for t_id in range(num_test_samples):
+            # print("pred_filenames[t_id]:",pred_filenames[t_id])
+            file_dir = pred_filenames[t_id].split('.')[0]
+            # print("file_dir",file_dir)
+            filename = file_dir.split('_')[-1]
+            # print("filename:",filename)
+            directory = file_dir.replace('CAM_FRONT', 'LIDAR_TOP')
+            gt_depth_path = os.path.join(args.gt_path, directory +'.png')
+            depth = cv2.imread(gt_depth_path, -1)
+            if depth is None:
+                print('Missing: %s ' % gt_depth_path)
+                missing_ids.add(t_id)
+                #sys.exit(0)
+                continue
+            
+            depth = depth.astype(np.float32)/1000.0
+
+            gt_depths.append(depth)
+    
+    # for row in gt_depths:
+    #     for col in row:
+    #         for last in col:
+    #             if last>0.0:
+    #                 print(last)
+                    
+    # sys.exit(0)
     print('GT files reading done')
     print('{} GT files missing'.format(len(missing_ids)))
 
@@ -172,7 +202,6 @@ def eval(pred_depths):
     d3 = np.zeros(num_samples, np.float32)
     
     for i in range(num_samples):
-
         gt_depth = gt_depths[i]
         pred_depth = pred_depths_valid[i]
 
@@ -184,13 +213,14 @@ def eval(pred_depths):
         gt_depth[np.isnan(gt_depth)] = 0
 
         valid_mask = np.logical_and(gt_depth > args.min_depth_eval, gt_depth < args.max_depth_eval)
-
+        # print("valid_mask:",valid_mask)
+        # # FIX width and height --input_height 512 --input_width 928
         if args.do_kb_crop:
             height, width = gt_depth.shape
-            top_margin = int(height - 352)
-            left_margin = int((width - 1216) / 2)
+            top_margin = int(height - 512)
+            left_margin = int((width - 928) / 2)
             pred_depth_uncropped = np.zeros((height, width), dtype=np.float32)
-            pred_depth_uncropped[top_margin:top_margin + 352, left_margin:left_margin + 1216] = pred_depth
+            pred_depth_uncropped[top_margin:top_margin + 512, left_margin:left_margin + 928] = pred_depth
             pred_depth = pred_depth_uncropped
 
         if args.garg_crop or args.eigen_crop:
@@ -207,7 +237,8 @@ def eval(pred_depths):
                     eval_mask[45:471, 41:601] = 1
 
             valid_mask = np.logical_and(valid_mask, eval_mask)
-
+        # print("gt_depth:",gt_depth[valid_mask])
+        # print("pred_depth:",pred_depth[valid_mask])
         silog[i], log10[i], abs_rel[i], sq_rel[i], rms[i], log_rms[i], d1[i], d2[i], d3[i] = compute_errors(gt_depth[valid_mask], pred_depth[valid_mask])
         csv_info.append([i,silog[i], log10[i], abs_rel[i], sq_rel[i], rms[i], log_rms[i], d1[i], d2[i], d3[i]])
 

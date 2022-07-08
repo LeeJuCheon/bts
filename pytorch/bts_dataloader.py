@@ -136,9 +136,12 @@ class DataLoadPreprocess(Dataset):
             image = np.asarray(image, dtype=np.float32) / 255.0
             depth_gt = np.asarray(depth_gt, dtype=np.float32)
             depth_gt = np.expand_dims(depth_gt, axis=2)
+            # TODO
 
-            if self.args.dataset == 'nyu':
+            if self.args.dataset == 'nyu' or self.args.dataset == 'nuscenes':
                 depth_gt = depth_gt / 1000.0
+            # elif self.args.dataset == 'nuscenes':
+            #     depth_gt = depth_gt / 10000.0
             else:
                 depth_gt = depth_gt / 256.0
 
@@ -179,8 +182,11 @@ class DataLoadPreprocess(Dataset):
                 if has_valid_depth:
                     depth_gt = np.asarray(depth_gt, dtype=np.float32)
                     depth_gt = np.expand_dims(depth_gt, axis=2)
-                    if self.args.dataset == 'nyu':
+                    # TODO
+                    if self.args.dataset == 'nyu' or self.args.dataset =='nuscenes':
                         depth_gt = depth_gt / 1000.0
+                    # elif self.args.dataset == 'nuscenes':
+                    #     depth_gt = depth_gt / 10000.0
                     else:
                         depth_gt = depth_gt / 256.0
 
